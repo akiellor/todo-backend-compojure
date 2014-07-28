@@ -35,20 +35,39 @@
   (swap! store (fn [state]
                  {:id (:id state) :todos (dissoc (:todos state) id)})))
 
-(defn created [result]
+(defn res->created [result]
   {:status 201
    :headers {"Location" (str "http://localhost:8080" "/todos/" (:id result))}
    :body result})
 
-(defn no-content []
+(defn res->no-content []
   {:status 204})
 
+(defn res->ok [body]
+  {:status 200 :body body})
+
 (defroutes core-routes
-  (OPTIONS "/todos" [] {:status 200})
-  (GET "/todos" [] {:status 200 :body (get-all)})
-  (OPTIONS "/todos/:id" [id] {:status 200})
-  (GET "/todos/:id" {{id :id} :params} {:status 200 :body (get-todo (Integer/parseInt id))})
-  (DELETE "/todos/:id" {{id :id} :params} (delete-todo (Integer/parseInt id)) (no-content))
-  (PATCH "/todos/:id" {{id :id} :params body :body} {:status 200 :body (patch-todo (Integer/parseInt id) (parse body))})
-  (POST "/todos" {body :body} (-> body parse create created))
-  (DELETE "/todos" [] (delete) (no-content)))
+  (OPTIONS "/todos" []
+           {:status 200})
+  (OPTIONS "/todos/:id" [id]
+           {:status 200})
+  (GET "/todos" []
+       (res->ok (get-all)))
+  (GET "/todos/:id" {{id :id} :params}
+       (res->ok (get-todo (Integer/parseInt id))))
+  (POST "/todos" {body :body}
+        (-> body
+            parse
+            create
+            res->created))
+  (PATCH "/todos/:id" {{id :id} :params body :body}
+         (-> body
+             parse
+             (#(patch-todo (Integer/parseInt id) %))
+             res->ok))
+  (DELETE "/todos" []
+          (delete)
+          (res->no-content))
+  (DELETE "/todos/:id" {{id :id} :params}
+          (delete-todo (Integer/parseInt id))
+          (res->no-content)))
