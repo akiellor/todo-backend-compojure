@@ -2,7 +2,9 @@
   (:require [compojure.core :refer :all]
             [clojure.data.json :as json]))
 
-(def store (atom {:id 0 :todos {}}))
+(def store (atom {:todos {}}))
+
+(defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (defn parse [body]
   (json/read-str (slurp body) :key-fn keyword))
@@ -14,10 +16,11 @@
       (assoc todo :url (str "http://localhost:8080/todos/" id)))))
 
 (defn create [todo]
-  (let [{id :id todos :todos} (swap! store (fn [state]
-                                             (let [{id :id todos :todos} state]
-                                               {:id (+ id 1) :todos (assoc todos id (merge todo {:id id :completed false}))})))]
-    (get-todo (- id 1))))
+  (let [id (uuid) new-todo (merge todo {:id id :completed false})]
+    (swap! store (fn [state]
+                   (let [{todos :todos} state]
+                     {:todos (assoc todos id new-todo)})))
+    (get-todo id)))
 
 (defn get-all []
   (let [ids (keys (:todos @store))]
@@ -54,7 +57,7 @@
   (GET "/todos" []
        (res->ok (get-all)))
   (GET "/todos/:id" {{id :id} :params}
-       (res->ok (get-todo (Integer/parseInt id))))
+       (res->ok (get-todo id)))
   (POST "/todos" {body :body}
         (-> body
             parse
@@ -63,11 +66,11 @@
   (PATCH "/todos/:id" {{id :id} :params body :body}
          (-> body
              parse
-             (#(patch-todo (Integer/parseInt id) %))
+             (#(patch-todo id %))
              res->ok))
   (DELETE "/todos" []
           (delete)
           (res->no-content))
   (DELETE "/todos/:id" {{id :id} :params}
-          (delete-todo (Integer/parseInt id))
+          (delete-todo id)
           (res->no-content)))
