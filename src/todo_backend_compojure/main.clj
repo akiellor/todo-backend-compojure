@@ -6,7 +6,8 @@
             [compojure.route :as route]
             [ring.middleware.json :refer [wrap-json-response]]
             [ring.adapter.jetty :as jetty]
-            [todo-backend-compojure.core :refer [core-routes]]))
+            [todo-backend-compojure.core :refer [core-routes]])
+  (:gen-class :main true))
 
 (defn wrap-request-logging [app]
   (fn [request]
