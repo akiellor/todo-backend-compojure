@@ -30,6 +30,26 @@
     (let [response (app request)]
       (assoc-in response [:headers] (merge (cors-headers request) (:headers response))))))
 
+(defn wrap-response-expand-location [app]
+  (fn [request]
+    (let [response (app request)
+          scheme (name (:scheme request))
+          host (get-in request [:headers "host"])
+          location (get-in response [:headers "Location"])]
+      (if location
+        (assoc-in response [:headers "Location"] (str scheme "://" host location))
+        response))))
+
+(defn wrap-response-expand-url-body [app]
+  (fn [request]
+    (let [response (app request)
+          scheme (name (:scheme request))
+          host (get-in request [:headers "host"])
+          url (get-in response [:body :url])]
+      (if url
+        (assoc-in response [:body :url] (str scheme "://" host url))
+        response))))
+
 (defroutes default
   (route/resources "/")
   (route/not-found "Not Found"))
@@ -37,6 +57,8 @@
 (def app
   (-> (routes core-routes default)
       (handler/site)
+      (wrap-response-expand-location)
+      (wrap-response-expand-url-body)
       (wrap-json-response)
       (wrap-response-cors)
       (wrap-request-logging)))

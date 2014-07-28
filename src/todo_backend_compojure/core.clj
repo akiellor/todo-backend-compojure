@@ -10,13 +10,10 @@
   (json/read-str (slurp body) :key-fn keyword))
 
 (defn get-todo [id]
-  (let [todo (get-in @todos [id])]
-    (if (nil? todo)
-      nil 
-      (assoc todo :url (str "http://localhost:8080/todos/" id)))))
+  (get-in @todos [id]))
 
 (defn create [todo]
-  (let [id (uuid) new-todo (merge todo {:id id :completed false})]
+  (let [id (uuid) new-todo (merge todo {:id id :completed false :url (str "/todos/" id)})]
     (swap! todos (fn [state]
                      (assoc state id new-todo)))
     (get-todo id)))
@@ -34,12 +31,11 @@
   (swap! todos {}))
 
 (defn delete-todo [id]
-  (swap! todos (fn [state]
-                 (dissoc state id))))
+  (swap! todos #(dissoc % id)))
 
 (defn res->created [result]
   {:status 201
-   :headers {"Location" (str "http://localhost:8080" "/todos/" (:id result))}
+   :headers {"Location" (:url result)}
    :body result})
 
 (defn res->no-content []
