@@ -7,6 +7,7 @@
   :uberjar-name "todo-backend-compojure-standalone.jar"
   :aot :all
   :java-target "1.7"
+  :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.4"]
                  [compojure "1.1.6"]
