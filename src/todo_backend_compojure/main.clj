@@ -6,7 +6,8 @@
             [compojure.route :as route]
             [ring.middleware.json :refer [wrap-json-response]]
             [ring.adapter.jetty :as jetty]
-            [todo-backend-compojure.core :refer [core-routes]])
+            [todo-backend-compojure.core :refer [core-routes]]
+            [clojure.walk :refer [prewalk prewalk-demo]])
   (:gen-class :main true))
 
 (defn wrap-request-logging [app]
@@ -41,15 +42,27 @@
         (assoc-in response [:headers "Location"] (str scheme "://" host location))
         response))))
 
+(defn url-node? [node]
+  (and
+    (vector? node)
+    (= (first node) :url)))
+
+(defn expand-url-node [prefix node]
+  (let [url (second node)]
+    (if (.startsWith url "/")
+      {:url (str prefix url)}
+      node)))
+
+(defn expand-url-body [prefix body]
+  (prewalk #(if (url-node? %) (expand-url-node prefix %) %) body))
+
 (defn wrap-response-expand-url-body [app]
   (fn [request]
     (let [response (app request)
           scheme (name (:scheme request))
           host (get-in request [:headers "host"])
-          url (get-in response [:body :url])]
-      (if url
-        (assoc-in response [:body :url] (str scheme "://" host url))
-        response))))
+          body (:body response)]
+      (assoc response :body (expand-url-body (str scheme "://" host) body)))))
 
 (defroutes default
   (route/resources "/")
