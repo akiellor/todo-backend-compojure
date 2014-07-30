@@ -12,7 +12,7 @@
 (defn get-todo [id]
   (get-in @todos [id]))
 
-(defn create [todo]
+(defn create-todo [todo]
   (let [id (uuid) new-todo (merge todo {:id id :completed false :url (str "/todos/" id)})]
     (swap! todos (fn [state]
                      (assoc state id new-todo)))
@@ -27,7 +27,7 @@
                  (merge state {id (merge (get-todo id) body)})))
   (get-todo id))
 
-(defn delete []
+(defn delete-all []
   (swap! todos {}))
 
 (defn delete-todo [id]
@@ -56,7 +56,7 @@
   (POST "/todos" {body :body}
         (-> body
             parse
-            create
+            create-todo
             res->created))
   (PATCH "/todos/:id" {{id :id} :params body :body}
          (-> body
@@ -64,7 +64,7 @@
              (#(patch-todo id %))
              res->ok))
   (DELETE "/todos" []
-          (delete)
+          (delete-all)
           (res->no-content))
   (DELETE "/todos/:id" {{id :id} :params}
           (delete-todo id)
