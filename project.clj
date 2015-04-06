@@ -13,4 +13,6 @@
                  [compojure "1.1.6"]
                  [ring-server "0.3.1"]
                  [ring/ring-json "0.3.0"]
-                 [log4j "1.2.17"]])
+                 [log4j "1.2.17"]
+                 [org.postgresql/postgresql "9.4-1201-jdbc41"]
+                 [org.clojure/java.jdbc "0.3.6"]])

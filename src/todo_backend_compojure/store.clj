@@ -1,30 +1,37 @@
-(ns todo-backend-compojure.store)
+(ns todo-backend-compojure.store
+  (:require [clojure.java.jdbc :as j]))
 
-(def todos (atom {}))
+(def db {:classname "org.postgresql.Driver"
+         :subprotocol "postgresql"
+         :subname (System/getenv "DATABASE_URL")})
 
-(defn uuid [] (str (java.util.UUID/randomUUID)))
+(defn as-todo [row]
+  (dissoc (assoc row :order (:sequence row)) :sequence))
+
+(defn as-row [todo]
+  (dissoc (assoc todo :sequence (:order todo)) :order))
 
 (defn get-todo [id]
-  (get-in @todos [id]))
+  (println id)
+  (first (j/query db
+                  ["select * from todos where id = ?::uuid" id]
+                  :row-fn as-todo)))
 
 (defn create-todo [todo]
-  (let [id (uuid) new-todo (merge todo {:id id :completed false})]
-    (swap! todos (fn [state]
-                     (assoc state id new-todo)))
-    (get-todo id)))
+  (as-todo (first (j/insert! db :todos
+                             (as-row (merge todo {:completed false}))))))
 
 (defn get-all []
-  (let [ids (keys @todos)]
-    (map get-todo ids)))
+  (j/query db ["select * from todos"]
+           :row-fn as-todo))
 
 (defn patch-todo [id body]
-  (swap! todos (fn [state]
-                 (merge state {id (merge (get-todo id) body)})))
+  (j/update! db :todos (as-row body) ["id = ?::uuid" id])
   (get-todo id))
 
 (defn delete-all []
-  (swap! todos {}))
+  (j/delete! db :todos [true]))
 
 (defn delete-todo [id]
-  (swap! todos #(dissoc % id)))
+  (j/delete! db :todos ["id = ?::uuid" id]))
 
