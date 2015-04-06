@@ -17,24 +17,33 @@
 (defn res->ok [body]
   {:status 200 :body body})
 
+(defn todo-representation [todo]
+  (assoc todo :url (str "/todos/" (:id todo))))
+
 (defroutes core-routes
   (OPTIONS "/todos" []
            {:status 200})
   (OPTIONS "/todos/:id" [id]
            {:status 200})
   (GET "/todos" []
-       (res->ok (store/get-all)))
+       (-> (store/get-all)
+           (#(map todo-representation %))
+           res->ok))
   (GET "/todos/:id" {{id :id} :params}
-       (res->ok (store/get-todo id)))
+       (-> (store/get-todo id)
+           todo-representation
+           res->ok))
   (POST "/todos" {body :body}
         (-> body
             parse
             store/create-todo
+            todo-representation
             res->created))
   (PATCH "/todos/:id" {{id :id} :params body :body}
          (-> body
              parse
              (#(store/patch-todo id %))
+             todo-representation
              res->ok))
   (DELETE "/todos" []
           (store/delete-all)

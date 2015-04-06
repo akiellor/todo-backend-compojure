@@ -8,7 +8,7 @@
   (get-in @todos [id]))
 
 (defn create-todo [todo]
-  (let [id (uuid) new-todo (merge todo {:id id :completed false :url (str "/todos/" id)})]
+  (let [id (uuid) new-todo (merge todo {:id id :completed false})]
     (swap! todos (fn [state]
                      (assoc state id new-todo)))
     (get-todo id)))
