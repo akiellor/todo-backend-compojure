@@ -1,9 +1,7 @@
 (ns todo-backend-compojure.store
   (:require [clojure.java.jdbc :as j]))
 
-(def db {:classname "org.postgresql.Driver"
-         :subprotocol "postgresql"
-         :subname (System/getenv "DATABASE_URL")})
+(def db (System/getenv "DATABASE_URL"))
 
 (defn as-todo [row]
   (dissoc (assoc row :order (:sequence row)) :sequence))
